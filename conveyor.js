@@ -73,6 +73,9 @@
         var BUFFER = [];
         var OPTIONS = opts || {};
 
+        var ACTION_TTL = OPTIONS.action_interval || 2;
+        var BUFFER_TTL = OPTIONS.buffer_interval || 1;
+
         var PROMISE = null;
         var SELF = this;
 
@@ -150,13 +153,13 @@
             if (ACTIONS.length === 0 && BUFFER.length !== 0) {
                 ACTIONS.push(BUFFER.shift());
             }
-        }, 1);
+        }, BUFFER_TTL);
 
         setInterval(function() {
             while (ACTIONS.length !== 0) {
                 PROMISE = performAction(ACTIONS.shift());
             }
-        }, 2);
+        }, ACTION_TTL);
     }
 
     // isConveyor
