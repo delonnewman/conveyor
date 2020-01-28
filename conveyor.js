@@ -1,51 +1,51 @@
-/**
- *  Buffers and coordinates actions
- *  -------------------------------
- *  It guarantees that each action is sequentially executed. Actions are zero arity functions
- *  that can optionally return a promise (any 'thenable' object) if a promise is returned the
- *  next function can optionally accept the result of the previous action as an argument.
- * 
- *  var IO = new Conveyor();
- * 
- *  Example:
- *    ```
- *    IO.do(
- *      function() { console.log("Hello") },
- *      function() { return makeAnAjaxCall().then(function() { console.log("Ajax Call Complete") }) },
- *      function() { console.log("Round trip is complete") }
- *    );
- *    ```
- * 
- *    will give the output:
- * 
- *    ```
- *    "Hello"
- *    "Ajax Call Complete"
- *    "Round trip is complete"
- *    ```
- * 
- *    whereas,
- * 
- *    ```
- *    console.log("Hello");
- *    makeAnAjaxCall().then(function() { console.log("Ajax Call Complete") });
- *    console.log("Round trip is complete");
- *    ```
- * 
- *    could give you:
- * 
- *    ```
- *    "Hello"
- *    "Round trip complete"
- *    "Ajax Call Complete"
- *    ```
- */
+//  Conveyor.js - Buffered and coordinated IO
+//  =========================================
+//
+//  A conveyor instance guarantees that each action is executed sequentially.
+//
+//  Actions are simply functions that can optionally return a promise (any 'thenable' object)
+//  if a promise is returned the next function will recieve the result of the promise as an
+//  argument.
+// 
+//  ```
+//  var IO = conveyor();
+//  ```
+//
+//  For example:
+//
+//  ```
+//  IO.do(
+//     () => console.log("Hello"),
+//     () => makeAnAjaxCall().then(() => console.log("Ajax Call Complete")),
+//     () => console.log("Round trip is complete")
+//  );
+//  ```
+// 
+//  will give the output:
+// 
+//  ```
+//  "Hello"
+//  "Ajax Call Complete"
+//  "Round trip is complete"
+//  ```
+// 
+//  whereas,
+// 
+//  ```
+//  console.log("Hello");
+//  makeAnAjaxCall().then(() => console.log("Ajax Call Complete"));
+//  console.log("Round trip is complete");
+//  ```
+// 
+//  could give you:
+// 
+//  ```
+//  "Hello"
+//  "Round trip complete"
+//  "Ajax Call Complete"
+//  ```
 (function () {
     "use strict";
-
-    //
-    // Utils
-    //
 
     function toArray(value) {
         return Array.prototype.slice.call(value);
@@ -59,6 +59,9 @@
         return x === void(0);
     }
     
+    // Instance Methods
+    // ----------------
+
     function Conveyor (opts) {
         var ACTIONS = [];
         var BUFFER = [];
@@ -77,10 +80,18 @@
             }
         }
 
+        // conveyor#do
+        // -----------
+        //
+        // Adds all the actions given as arguments to the conveyor
         this.do = function() {
             this.doAll(arguments);
         };
 
+        // conveyor#doAll
+        // --------------
+        //
+        // Adds an array of actions to the conveyor
         this.doAll = function(fns) {
             var i, fn;
             for (i = 0; i < fns.length; i++) {
@@ -96,6 +107,10 @@
             return this;
         };
 
+        // conveyor#isComplete
+        // -------------------
+        //
+        // Returns true if there are no more actions to process and the buffer is flushed
         this.isComplete = function() {
             return ACTIONS.length === 0 && BUFFER.length === 0;
         };
@@ -124,14 +139,12 @@
             return args_;
         }
 
-        // flush buffer
         setInterval(function() {
             if (ACTIONS.length === 0 && BUFFER.length !== 0) {
                 ACTIONS.push(BUFFER.shift());
             }
         }, 1);
 
-        // execute actions
         setInterval(function() {
             while (ACTIONS.length !== 0) {
                 PROMISE = performAction(ACTIONS.shift());
@@ -139,14 +152,35 @@
         }, 2);
     }
 
+    // isConveyor
+    // ----------
+    //
+    // Returns true is the value given is a Conveyor instance, otherwise returns false.
+    function isConveyor(x) {
+        return x instanceof Conveyor;
+    }
+
+    // conveyor
+    // --------
+    //
     // Returns a new Conveyor instance
     function conveyor(opts) {
         return new Conveyor(opts);
     }
 
+    // Action Builders & Combinators
+    // -----------------------------
+
+    // conveyor.asAction
+    // -----------------
+    //
     // Builds an action from a function and it's arguments
-    // Example:
-    //   action(function(name) { console.log('Hello ' + name) }, "Peter")() => "Hello Peter"
+    //
+    // *Example:*
+    // ```
+    // conveyor.asAction((name) => console.log('Hello ' + name), "Peter")()
+    // // prints "Hello Peter"
+    // ```
     conveyor.asAction = function(fn) {
         var args = Array.prototype.slice.call(arguments, 1);
         return function() {
@@ -154,8 +188,20 @@
         };
     };
 
+    // conveyor.tap
+    // ------------
+    //
     // Returns an action that calls the given function (for-side effects), but returns
     // the argument that's been past to it.
+    //
+    // *Example:*
+    // ```
+    // IO.do(
+    //     returnsOne,
+    //     conveyor.tap((x) => console.log(x + 1)),
+    //     getsOne
+    // );
+    // ```
     conveyor.tap = function(f) {
         return function(x) {
             f(x);
@@ -163,12 +209,27 @@
         };
     };
 
+    // conveyor.log
+    // ------------
+    //
     // Returns an action that will log it's input and return it for the next action.
-    conveyor.log = tap(console.log.bind(console));
+    //
+    // *Example:*
+    // ```
+    // conveyor.log("test")() // prints "test" at the console
+    // ```
+    conveyor.log = conveyor.tap(console.log.bind(console));
 
-    // A no-op action.
+    // conveyor.doNothing
+    // ------------------
+    //
+    // Is a no-op action. It takes no arguments, returns no value, and has no
+    // side effects.
     conveyor.doNothing = function(){};
 
+    // conveyor.doSimultaneously
+    // -------------------------
+    //
     // Returns an action that will execute the actions that it's given all at once.
     conveyor.doSimultaneously = function() {
         var actions = arguments;
@@ -194,6 +255,9 @@
         });
     }
 
+    // conveyor.doSequentially
+    // -----------------------
+    //
     // Returns an action that executes the given actions sequentially an returns a promise
     // that will ensure that any actions added to a conveyor after it will be executed sequentially.
     conveyor.doSequentially = function() {
@@ -220,11 +284,10 @@
         };
     };
 
-    // Returns true is the value given is a Conveyor instance, otherwise returns false.
-    function isConveyor(x) {
-        return x instanceof Conveyor;
-    }
+    this.conveyor = conveyor;
 
-    return conveyor;
+    if (!isUndefined(module.exports)) {
+        module.exports = conveyor;
+    }
 
 }.call(this));

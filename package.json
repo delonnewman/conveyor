@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/delonnewman/conveyor/issues"
   },
-  "homepage": "https://github.com/delonnewman/conveyor#readme"
+  "homepage": "https://github.com/delonnewman/conveyor#readme",
+  "devDependencies": {
+    "jasmine": "^3.5.0"
+  }
 }
