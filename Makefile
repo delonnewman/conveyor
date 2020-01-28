@@ -1,10 +1,13 @@
-.PHONY: docs clean deps test
+.PHONY: docs clean deps test publish
 
 NODE_BIN=/usr/local/bin/node
 JASMINE_BIN=node_modules/jasmine/bin/jasmine.js
 
 test:
 	$(NODE_BIN) $(JASMINE_BIN)
+
+publish:
+	npm publish
 
 deps: package-lock.json
 
