@@ -11,7 +11,10 @@ deps: package-lock.json
 package-lock.json:
 	npm install
 
-docs: docs/conveyor.html
+docs: docs/index.html
+
+docs/index.html: docs/conveyor.html
+	mv docs/conveyor.html docs/index.html
 
 docs/conveyor.html: /usr/local/bin/docco
 	docco conveyor.js

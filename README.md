@@ -3,6 +3,16 @@ NAME
 
 Conveyor.js - Buffers and coordinates IO.
 
+INSTALL
+=======
+
+    > npm install conveyorjs
+
+DOCUMENTATION
+=============
+
+[Conveyor.js](https://delonnewman.github.io/conveyor)
+
 SYNOPSIS
 ========
 
@@ -34,11 +44,6 @@ function doAddTodoItem(item) {
 }
 
 ```
-
-INSTALL
-=======
-
-    > npm install conveyorjs
 
 AUTHOR
 ======
