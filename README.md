@@ -22,9 +22,7 @@ function saveItemtoDatabase(item) {
 }
 
 function handleServiceError(resultFromPromise) {
-  return function() {
-    // error handling
-  };
+  // error handling
 }
 
 function doAddTodoItem(item) {
