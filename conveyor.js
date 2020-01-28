@@ -81,7 +81,6 @@
                 OPTIONS.error.call();
             }
             else {
-                console.error('Conveyor action failure', msg);
                 throw msg;
             }
         }
@@ -125,7 +124,6 @@
         };
 
         function performAction(action) {
-            console.log('performing action', action);
             if (PROMISE == null) {
                 var res = action.call(SELF);
                 if (!isUndefined(res)) {
