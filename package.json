@@ -1,5 +1,5 @@
 {
-  "name": "conveyor",
+  "name": "conveyorjs",
   "version": "0.1.0",
   "description": "Buffers and coordinates IO",
   "main": "conveyor.js",

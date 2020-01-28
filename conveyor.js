@@ -40,7 +40,7 @@
  *    "Ajax Call Complete"
  *    ```
  */
-(function ($, _) {
+(function () {
     "use strict";
 
     //
