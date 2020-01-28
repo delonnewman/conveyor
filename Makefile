@@ -1,7 +1,13 @@
-.PHONY: docs clean deps test publish
-
+UGLIFY_BIN=node_modules/uglify-js/bin/uglifyjs
 NODE_BIN=/usr/local/bin/node
 JASMINE_BIN=node_modules/jasmine/bin/jasmine.js
+
+.PHONY: docs clean deps test publish
+
+all: conveyor.min.js
+
+conveyor.min.js:
+	$(UGLIFY_BIN) conveyor.js > conveyor.min.js
 
 test:
 	$(NODE_BIN) $(JASMINE_BIN)
