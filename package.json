@@ -1,0 +1,19 @@
+{
+  "name": "conveyor",
+  "version": "0.1.0",
+  "description": "Buffers and coordinates IO",
+  "main": "conveyor.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/delonnewman/conveyor.git"
+  },
+  "author": "Delon Newman",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/delonnewman/conveyor/issues"
+  },
+  "homepage": "https://github.com/delonnewman/conveyor#readme"
+}
