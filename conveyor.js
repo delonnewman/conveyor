@@ -6,6 +6,10 @@
 //  Actions are simply functions that can optionally return a promise (any 'thenable' object)
 //  if a promise is returned the next function will recieve the result of the promise as an
 //  argument.
+//
+//  It's very simple, and has no dependencies. It can be used along side functional utility
+//  libraries (e.g. [underscore.js][1], [lodash][2], [Ramda][3], etc.) and a
+//  [virtual DOM implementation][4] for a purely functional style of develoment.
 // 
 //  ```
 //  var IO = conveyor();
@@ -44,6 +48,11 @@
 //  "Round trip complete"
 //  "Ajax Call Complete"
 //  ```
+//
+//  [1]: https://underscorejs.org/
+//  [2]: https://lodash.com/
+//  [3]: https://ramdajs.com/
+//  [4]: https://www.npmjs.com/search?q=virtual%20dom
 (function () {
     "use strict";
 
@@ -59,9 +68,6 @@
         return x === void(0);
     }
     
-    // Instance Methods
-    // ----------------
-
     function Conveyor (opts) {
         var ACTIONS = [];
         var BUFFER = [];
@@ -79,6 +85,9 @@
                 throw msg;
             }
         }
+
+        // Instance Methods
+        // ----------------
 
         // conveyor#do
         // -----------

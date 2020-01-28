@@ -35,6 +35,11 @@ function doAddTodoItem(item) {
 
 ```
 
+INSTALL
+=======
+
+    > npm install conveyorjs
+
 AUTHOR
 ======
 

@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title> Conveyor.js - Buffered and coordinated IO</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+    <ul class="sections">
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+              <h1 id="conveyorjs---buffered-and-coordinated-io"> Conveyor.js - Buffered and coordinated IO</h1>
+<p> A conveyor instance guarantees that each action is executed sequentially.</p>
+<p> Actions are simply functions that can optionally return a promise (any ‘thenable’ object)
+ if a promise is returned the next function will recieve the result of the promise as an
+ argument.</p>
+<p> It’s very simple, and has no dependencies. It can be used along side functional utility
+ libraries (e.g. <a href="https://underscorejs.org/">underscore.js</a>, <a href="https://lodash.com/">lodash</a>, <a href="https://ramdajs.com/">Ramda</a>, etc.) and a
+ <a href="https://www.npmjs.com/search?q=virtual%20dom">virtual DOM implementation</a> for a purely functional style of develoment.</p>
+<pre><code> <span class="hljs-keyword">var</span> IO = conveyor();</code></pre><p> For example:</p>
+<pre><code> IO.do(
+    <span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-built_in">console</span>.log(<span class="hljs-string">"Hello"</span>),
+    () =&gt; makeAnAjaxCall().then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-built_in">console</span>.log(<span class="hljs-string">"Ajax Call Complete"</span>)),
+    () =&gt; <span class="hljs-built_in">console</span>.log(<span class="hljs-string">"Round trip is complete"</span>)
+ );</code></pre><p> will give the output:</p>
+<pre><code> <span class="hljs-string">"Hello"</span>
+ <span class="hljs-string">"Ajax Call Complete"</span>
+ <span class="hljs-string">"Round trip is complete"</span></code></pre><p> whereas,</p>
+<pre><code> <span class="hljs-built_in">console</span>.log(<span class="hljs-string">"Hello"</span>);
+ makeAnAjaxCall().then(<span class="hljs-function"><span class="hljs-params">()</span> =&gt;</span> <span class="hljs-built_in">console</span>.log(<span class="hljs-string">"Ajax Call Complete"</span>));
+ <span class="hljs-built_in">console</span>.log(<span class="hljs-string">"Round trip is complete"</span>);</code></pre><p> could give you:</p>
+<pre><code> <span class="hljs-string">"Hello"</span>
+ <span class="hljs-string">"Round trip complete"</span>
+ <span class="hljs-string">"Ajax Call Complete"</span></code></pre>
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>(<span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) </span>{
+<span class="hljs-meta">    "use strict"</span>;
+
+    <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">toArray</span>(<span class="hljs-params">value</span>) </span>{
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">Array</span>.prototype.slice.call(value);
+    }
+    
+    <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">isFunction</span>(<span class="hljs-params">x</span>) </span>{
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">Object</span>.prototype.toString.call(x) === <span class="hljs-string">'[object Function]'</span>;
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">isUndefined</span>(<span class="hljs-params">x</span>) </span>{
+        <span class="hljs-keyword">return</span> x === <span class="hljs-keyword">void</span>(<span class="hljs-number">0</span>);
+    }
+    
+    <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">Conveyor</span> (<span class="hljs-params">opts</span>) </span>{
+        <span class="hljs-keyword">var</span> ACTIONS = [];
+        <span class="hljs-keyword">var</span> BUFFER = [];
+        <span class="hljs-keyword">var</span> OPTIONS = opts || {};
+
+        <span class="hljs-keyword">var</span> PROMISE = <span class="hljs-literal">null</span>;
+        <span class="hljs-keyword">var</span> SELF = <span class="hljs-keyword">this</span>;
+
+        <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">handleError</span>(<span class="hljs-params">msg</span>) </span>{
+            <span class="hljs-keyword">if</span> (isFunction(OPTIONS.error)) {
+                OPTIONS.error.call();
+            }
+            <span class="hljs-keyword">else</span> {
+                <span class="hljs-built_in">console</span>.error(<span class="hljs-string">'Conveyor action failure'</span>, msg);
+                <span class="hljs-keyword">throw</span> msg;
+            }
+        }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-2">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+              <h2 id="instance-methods">Instance Methods</h2>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+              
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-4">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-4">&#182;</a>
+              </div>
+              <h2 id="conveyordo">conveyor#do</h2>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-5">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-5">&#182;</a>
+              </div>
+              <p>Adds all the actions given as arguments to the conveyor</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">this</span>.do = <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
+            <span class="hljs-keyword">this</span>.doAll(<span class="hljs-built_in">arguments</span>);
+        };</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-6">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+              <h2 id="conveyordoall">conveyor#doAll</h2>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+              <p>Adds an array of actions to the conveyor</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">this</span>.doAll = <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">fns</span>) </span>{
+            <span class="hljs-keyword">var</span> i, fn;
+            <span class="hljs-keyword">for</span> (i = <span class="hljs-number">0</span>; i &lt; fns.length; i++) {
+                fn = fns[i];
+                <span class="hljs-keyword">if</span> (!isFunction(fn)) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'An action must be a function'</span>);
+                <span class="hljs-keyword">if</span> (ACTIONS.length &gt; <span class="hljs-number">5</span>) {
+                    BUFFER.push(fn);
+                }
+                <span class="hljs-keyword">else</span> {
+                    ACTIONS.push(fn);
+                }
+            }
+            <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>;
+        };</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+              <h2 id="conveyoriscomplete">conveyor#isComplete</h2>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-9">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+              <p>Returns true if there are no more actions to process and the buffer is flushed</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="hljs-keyword">this</span>.isComplete = <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
+            <span class="hljs-keyword">return</span> ACTIONS.length === <span class="hljs-number">0</span> &amp;&amp; BUFFER.length === <span class="hljs-number">0</span>;
+        };
+
+        <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">performAction</span>(<span class="hljs-params">action</span>) </span>{
+            <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'performing action'</span>, action);
+            <span class="hljs-keyword">if</span> (PROMISE == <span class="hljs-literal">null</span>) {
+                <span class="hljs-keyword">var</span> res = action.call(SELF);
+                <span class="hljs-keyword">if</span> (!isUndefined(res)) {
+                    <span class="hljs-keyword">return</span> <span class="hljs-built_in">Promise</span>.resolve(res);
+                }
+                <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;
+            }
+            <span class="hljs-keyword">else</span> {
+                <span class="hljs-keyword">return</span> PROMISE.then(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
+                    <span class="hljs-keyword">return</span> action.apply(SELF, removeLastArgumentIfUndefined(<span class="hljs-built_in">arguments</span>));
+                }, handleError);
+            }
+        }
+
+        <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">removeLastArgumentIfUndefined</span>(<span class="hljs-params">args</span>) </span>{
+            <span class="hljs-keyword">var</span> args_ = toArray(args);
+            <span class="hljs-keyword">if</span> (isUndefined(args_[args_.length - <span class="hljs-number">1</span>])) {
+                <span class="hljs-keyword">return</span> args_.slice(<span class="hljs-number">0</span>, args_.length - <span class="hljs-number">1</span>);
+            }
+            <span class="hljs-keyword">return</span> args_;
+        }
+
+        setInterval(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
+            <span class="hljs-keyword">if</span> (ACTIONS.length === <span class="hljs-number">0</span> &amp;&amp; BUFFER.length !== <span class="hljs-number">0</span>) {
+                ACTIONS.push(BUFFER.shift());
+            }
+        }, <span class="hljs-number">1</span>);
+
+        setInterval(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
+            <span class="hljs-keyword">while</span> (ACTIONS.length !== <span class="hljs-number">0</span>) {
+                PROMISE = performAction(ACTIONS.shift());
+            }
+        }, <span class="hljs-number">2</span>);
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-10">&#182;</a>
+              </div>
+              <h2 id="isconveyor">isConveyor</h2>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-11">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-11">&#182;</a>
+              </div>
+              <p>Returns true is the value given is a Conveyor instance, otherwise returns false.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">isConveyor</span>(<span class="hljs-params">x</span>) </span>{
+        <span class="hljs-keyword">return</span> x <span class="hljs-keyword">instanceof</span> Conveyor;
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-12">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-12">&#182;</a>
+              </div>
+              <h2 id="conveyor">conveyor</h2>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-13">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-13">&#182;</a>
+              </div>
+              <p>Returns a new Conveyor instance</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">conveyor</span>(<span class="hljs-params">opts</span>) </span>{
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> Conveyor(opts);
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-14">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-14">&#182;</a>
+              </div>
+              <h2 id="action-builders--combinators">Action Builders &amp; Combinators</h2>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-15">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-15">&#182;</a>
+              </div>
+              
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-16">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-16">&#182;</a>
+              </div>
+              <h2 id="conveyorasaction">conveyor.asAction</h2>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-17">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-17">&#182;</a>
+              </div>
+              <p>Builds an action from a function and it’s arguments</p>
+<p><em>Example:</em></p>
+<pre><code>conveyor.asAction(<span class="hljs-function">(<span class="hljs-params">name</span>) =&gt;</span> <span class="hljs-built_in">console</span>.log(<span class="hljs-string">'Hello '</span> + name), <span class="hljs-string">"Peter"</span>)()
+<span class="hljs-comment">// prints "Hello Peter"</span></code></pre>
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    conveyor.asAction = <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">fn</span>) </span>{
+        <span class="hljs-keyword">var</span> args = <span class="hljs-built_in">Array</span>.prototype.slice.call(<span class="hljs-built_in">arguments</span>, <span class="hljs-number">1</span>);
+        <span class="hljs-keyword">return</span> <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
+            <span class="hljs-keyword">return</span> fn.apply(<span class="hljs-keyword">this</span>, args);
+        };
+    };</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-18">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-18">&#182;</a>
+              </div>
+              <h2 id="conveyortap">conveyor.tap</h2>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-19">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-19">&#182;</a>
+              </div>
+              <p>Returns an action that calls the given function (for-side effects), but returns
+the argument that’s been past to it.</p>
+<p><em>Example:</em></p>
+<pre><code>IO.do(
+    returnsOne,
+    conveyor.tap(<span class="hljs-function">(<span class="hljs-params">x</span>) =&gt;</span> <span class="hljs-built_in">console</span>.log(x + <span class="hljs-number">1</span>)),
+    getsOne
+);</code></pre>
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    conveyor.tap = <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">f</span>) </span>{
+        <span class="hljs-keyword">return</span> <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">x</span>) </span>{
+            f(x);
+            <span class="hljs-keyword">return</span> x;
+        };
+    };</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-20">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-20">&#182;</a>
+              </div>
+              <h2 id="conveyorlog">conveyor.log</h2>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-21">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-21">&#182;</a>
+              </div>
+              <p>Returns an action that will log it’s input and return it for the next action.</p>
+<p><em>Example:</em></p>
+<pre><code>conveyor.log(<span class="hljs-string">"test"</span>)() <span class="hljs-comment">// prints "test" at the console</span></code></pre>
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    conveyor.log = conveyor.tap(<span class="hljs-built_in">console</span>.log.bind(<span class="hljs-built_in">console</span>));</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-22">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-22">&#182;</a>
+              </div>
+              <h2 id="conveyordonothing">conveyor.doNothing</h2>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-23">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-23">&#182;</a>
+              </div>
+              <p>Is a no-op action. It takes no arguments, returns no value, and has no
+side effects.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    conveyor.doNothing = <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>)</span>{};</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-24">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-24">&#182;</a>
+              </div>
+              <h2 id="conveyordosimultaneously">conveyor.doSimultaneously</h2>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-25">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-25">&#182;</a>
+              </div>
+              <p>Returns an action that will execute the actions that it’s given all at once.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    conveyor.doSimultaneously = <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
+        <span class="hljs-keyword">var</span> actions = <span class="hljs-built_in">arguments</span>;
+        <span class="hljs-keyword">return</span> <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
+            <span class="hljs-keyword">var</span> i, action;
+            <span class="hljs-keyword">for</span> (i = <span class="hljs-number">0</span>; i &lt; actions.length; i++) {
+                action = actions[i];
+                <span class="hljs-keyword">if</span> (!_.isFunction(action)) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'Actions should be functions'</span>);
+                action.apply(<span class="hljs-keyword">this</span>, <span class="hljs-built_in">arguments</span>);
+            }
+        };
+    };
+
+    <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">resolveThenable</span>(<span class="hljs-params">thenable, action, self</span>) </span>{
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">Promise</span>.resolve(thenable).then(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
+            <span class="hljs-keyword">return</span> action.apply(self, <span class="hljs-built_in">arguments</span>);
+        });
+    }
+
+    <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">collectPromiseAction</span>(<span class="hljs-params">promise, ret, action, self</span>) </span>{
+        <span class="hljs-keyword">return</span> promise.then(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
+            <span class="hljs-keyword">return</span> resolveThenable(ret, action, self);
+        });
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-26">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-26">&#182;</a>
+              </div>
+              <h2 id="conveyordosequentially">conveyor.doSequentially</h2>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-27">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-27">&#182;</a>
+              </div>
+              <p>Returns an action that executes the given actions sequentially an returns a promise
+that will ensure that any actions added to a conveyor after it will be executed sequentially.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    conveyor.doSequentially = <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
+        <span class="hljs-keyword">var</span> actions = <span class="hljs-built_in">arguments</span>;
+        <span class="hljs-keyword">return</span> <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params"></span>) </span>{
+            <span class="hljs-keyword">var</span> promise, i, action, ret, args, self = <span class="hljs-keyword">this</span>;
+            <span class="hljs-keyword">for</span> (i = <span class="hljs-number">0</span>; i &lt; actions.length; i++) {
+                action = actions[i];
+                <span class="hljs-keyword">if</span> (!_.isFunction(action)) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-built_in">Error</span>(<span class="hljs-string">'Actions should be functions'</span>);
+                <span class="hljs-keyword">if</span> (ret == <span class="hljs-literal">null</span>) {
+                    ret = action.apply(self, <span class="hljs-built_in">arguments</span>);
+                }
+                <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (_.isFunction(ret.then) &amp;&amp; promise == <span class="hljs-literal">null</span>) {
+                    promise = resolveThenable(ret, action, self);
+                }
+                <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (_.isFunction(ret.then)) {
+                    promise = collectPromiseAction(promise, ret, action, self);
+                }
+                <span class="hljs-keyword">else</span> {
+                    ret = action.apply(self, [ret]);
+                }
+            }
+            <span class="hljs-keyword">return</span> promise || <span class="hljs-built_in">Promise</span>.resolve(ret);
+        };
+    };
+
+    <span class="hljs-keyword">this</span>.conveyor = conveyor;
+
+    <span class="hljs-keyword">if</span> (!isUndefined(<span class="hljs-built_in">module</span>.exports)) {
+        <span class="hljs-built_in">module</span>.exports = conveyor;
+    }
+
+}.call(<span class="hljs-keyword">this</span>));</pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>
