@@ -10,6 +10,7 @@
     "type": "git",
     "url": "git+https://github.com/delonnewman/conveyor.git"
   },
+  "keywords": ["io", "promises", "promise", "functional-programming", "functional", "minimal", "small", "coordination", "concurrency", "concurrent"],
   "author": "Delon Newman",
   "license": "ISC",
   "bugs": {
