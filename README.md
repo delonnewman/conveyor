@@ -11,7 +11,7 @@ Conveyor.js - Buffers and coordinates IO.
 INSTALL
 =======
 
-    > npm install @delonnewman/conveyorjs
+    > npm install @delonnewman/conveyor
 
 DOCUMENTATION
 =============
