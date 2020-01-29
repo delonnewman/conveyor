@@ -107,7 +107,9 @@
             var i, fn;
             for (i = 0; i < fns.length; i++) {
                 fn = fns[i];
-                if (!isFunction(fn)) throw new Error('An action must be a function');
+                if (!isFunction(fn)) {
+                    throw new Error('An action must be a function');
+                }
                 if (ACTIONS.length > 5) {
                     BUFFER.push(fn);
                 }
@@ -132,18 +134,8 @@
         // Implements the 'thenable' interface so a conveyor can be treated as a promise.
         this.then = function(resolve, reject) {
             if (PROMISE == null) {
-                return new Promise(function(resolve1) {
-                    var interval = setInterval(function() {
-                        if (SELF.isComplete()) {
-                            try {
-                                resolve();
-                            }
-                            catch (e) {
-                                reject(e);
-                            }
-                            clearInterval(interval);
-                        }
-                    }, 10);
+                return new Promise(function(resolve1, reject) {
+                    SELF.do(resolve, resolve1);
                 });
             }
             else {
@@ -187,6 +179,19 @@
         }, ACTION_TTL);
     }
 
+    // Extentions
+    // ----------
+
+    Conveyor.prototype = Object.create(null);
+
+    // conveyor#log
+    // ------------
+    //
+    // Queues an action prints it's first argument to the console.
+    Conveyor.prototype.log = function() {
+        return this.do(conveyor.say.apply(conveyor, arguments));
+    };
+
     // isConveyor
     // ----------
     //
@@ -212,7 +217,7 @@
     // Builds an action from a function and it's arguments
     //
     // *Example:*
-    // ```
+    // ```js
     // conveyor.asAction((name) => console.log('Hello ' + name), "Peter")()
     // // prints "Hello Peter"
     // ```
@@ -223,6 +228,13 @@
         };
     };
 
+    // conveyor.none
+    // ------------------
+    //
+    // Is a no-op action. It takes no arguments, returns no value, and has no
+    // side effects.
+    conveyor.none = function(){};
+
     // conveyor.tap
     // ------------
     //
@@ -230,7 +242,7 @@
     // the argument that's been past to it.
     //
     // *Example:*
-    // ```
+    // ```js
     // IO.do(
     //     returnsOne,
     //     conveyor.tap((x) => console.log(x + 1)),
@@ -240,7 +252,40 @@
     conveyor.tap = function(f) {
         return function(x) {
             f(x);
-            return x;
+            return conveyor.return(x);
+        };
+    };
+
+    // conveyor.always
+    // ---------------
+    //
+    // Returns an action that always returns the given value.
+    //
+    // *Example:*
+    // ```
+    // var one = conveyor.always(1);
+    // IO.do(one, conveyor.log, one, conveyor.log);
+    // // prints 1 1 to the console.
+    // ```
+    conveyor.always = function(x) {
+        return function() {
+            return conveyor.return(x);
+        };
+    };
+
+    // conveyor.ident
+    // --------------
+    //
+    // Returns an action that returns the first argument that is given to it.
+    //
+    // *Example:*
+    // ```
+    // IO.do(conveyor.always(1), conveyor.ident, conveyor.log)
+    // // prints 1 to the console
+    // ```
+    conveyor.ident = function() {
+        return function(x) {
+            return conveyor.return(x);
         };
     };
 
@@ -250,17 +295,35 @@
     // Returns an action that will log it's input and return it for the next action.
     //
     // *Example:*
+    // ```js
+    // IO.do(conveyor.always('test'), conveyor.log, conveyor.log);
+    // // prints 'test' 'test' to the console.
     // ```
-    // conveyor.log("test")() // prints "test" at the console
-    // ```
-    conveyor.log = conveyor.tap(console.log.bind(console));
+    conveyor.log = function() {
+        return function(x) {
+            console.log.apply(console, arguments);
+            return conveyor.return(x);
+        };
+    };
 
-    // conveyor.doNothing
-    // ------------------
+    // conveyor.say
+    // ------------
     //
-    // Is a no-op action. It takes no arguments, returns no value, and has no
-    // side effects.
-    conveyor.doNothing = function(){};
+    // Returns an action that will print the given message to the console. It' will also pass along
+    // it's first argument for the next action.
+    //
+    // *Example:*
+    // ```js
+    // IO.do(conveyor.say('test'), conveyor.say('test'));
+    // // prints 'test' 'test' to the console.
+    // ```
+    conveyor.say = function(msg) {
+        var args = arguments;
+        return function(x) {
+            console.log.apply(console, args);
+            return conveyor.return(x);
+        };
+    };
 
     // conveyor.sleep
     // --------------
@@ -278,28 +341,22 @@
         };
     };
 
+    // conveyor.throw
+    // --------------
+    //
+    // Returns an action that throws an exception.
+    conveyor.throw = function(e) {
+        return function() {
+            throw e;
+        };
+    };
+
     // conveyor.return
     // ---------------
     //
     // Is a synonym for `Promise.resolve`. It's a way of explicitly returning a value to
     // the next action.
     conveyor.return = Promise.resolve.bind(Promise);
-
-    // conveyor.doSimultaneously
-    // -------------------------
-    //
-    // Returns an action that will execute the actions that it's given all at once.
-    conveyor.doSimultaneously = function() {
-        var actions = arguments;
-        return function() {
-            var i, action;
-            for (i = 0; i < actions.length; i++) {
-                action = actions[i];
-                if (!isFunction(action)) throw new Error('Actions should be functions');
-                action.apply(this, arguments);
-            }
-        };
-    };
 
     function resolveThenable(thenable, action, self) {
         return Promise.resolve(thenable).then(function() {
@@ -313,36 +370,75 @@
         });
     }
 
-    // conveyor.doSequentially
+    conveyor.doSequentially = function(actions) {
+        var promise, i, action, ret, args, self = this;
+        for (i = 0; i < actions.length; i++) {
+            action = actions[i];
+            if (!isFunction(action)) throw new Error('Actions should be functions');
+            if (ret == null) {
+                ret = action.apply(self, arguments);
+            }
+            else if (isFunction(ret.then) && promise == null) {
+                promise = resolveThenable(ret, action, self);
+            }
+            else if (isFunction(ret.then)) {
+                promise = collectPromiseAction(promise, ret, action, self);
+            }
+            else {
+                ret = action.apply(self, [ret]);
+            }
+        }
+        return promise || Promise.resolve(ret);
+    };
+
+    // conveyor.sequence
     // -----------------------
     //
     // Returns an action that executes the given actions sequentially an returns a promise
     // that will ensure that any actions added to a conveyor after it will be executed sequentially.
-    conveyor.doSequentially = function() {
+    conveyor.sequence = function() {
         var actions = arguments;
         return function() {
-            var promise, i, action, ret, args, self = this;
-            for (i = 0; i < actions.length; i++) {
-                action = actions[i];
-                if (!isFunction(action)) throw new Error('Actions should be functions');
-                if (ret == null) {
-                    ret = action.apply(self, arguments);
-                }
-                else if (isFunction(ret.then) && promise == null) {
-                    promise = resolveThenable(ret, action, self);
-                }
-                else if (isFunction(ret.then)) {
-                    promise = collectPromiseAction(promise, ret, action, self);
-                }
-                else {
-                    ret = action.apply(self, [ret]);
-                }
+            return conveyor.doSequentially(actions);
+        };
+    };
+
+    // `conveyor.when(predicate, ...actions)`
+    // --------------------------------------
+    //
+    // Returns an action that executes `actions` only if `predicate` is not `null`, `undefined` or
+    // `false`.
+    conveyor.when = function(predicate) {
+        var actions = Array.prototype.slice.call(arguments, 1);
+        return function(x) {
+            var y = predicate(x);
+            if (y != null && y != false) {
+                return conveyor.doSequentially(actions);
             }
-            return promise || Promise.resolve(ret);
+            return conveyor.return(x);
+        };
+    };
+
+    // `conveyor.unless(predicate, ...actions)`
+    // --------------------------------------
+    //
+    // Returns an action that executes `actions` only if `predicate` is `null`, `undefined` or
+    // `false`.
+    conveyor.unless = function(predicate) {
+        var actions = Array.prototype.slice.call(arguments, 1);
+        return function(x) {
+            var y = predicate(x);
+            if (y == null || y == false) {
+                return conveyor.doSequentially(actions);
+            }
+            return conveyor.return(x);
         };
     };
 
     this.conveyor = conveyor;
+
+    // The contructor is available for extention
+    conveyor.Conveyor = Conveyor;
 
     if (typeof module !== 'undefined') {
         module.exports = conveyor;

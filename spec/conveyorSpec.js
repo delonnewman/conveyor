@@ -4,7 +4,7 @@ if (typeof module !== 'undefined') {
 }
 
 function nat(max) {
-    return Math.floor(Math.random() * Math.floor(max || 10000));
+    return Math.floor(Math.random() * Math.floor(max || 1000));
 }
 
 function pos(max) {
@@ -31,120 +31,113 @@ function repeat(value, max) {
     return array;
 }
 
-describe('conveyor#do', () => {
-    it('should execute all the actions given sequentially', () => {
+describe('conveyor#do', function() {
+    it('should execute all the actions given sequentially', function() {
         var io = conveyor().do(
             () => [1],
             conveyor.sleep(nat(100)),
-            (nums) => nums + [2],
+            (nums) => nums.concat([2]),
             conveyor.sleep(nat(100))
         );
-        expectAsync(io).toBeResolvedTo([1, 2]);
+        return expectAsync(io).toBeResolvedTo([1, 2]);
     });
 });
 
-describe('conveyor#doAll', () => {
-    it('should execute all the actions given sequentially', () => {
+describe('conveyor#doAll', function() {
+    it('should execute all the actions given sequentially', function() {
         var io = conveyor();
         io.doAll([
-            () => [1],
+            conveyor.always([1]),
             conveyor.sleep(nat(100)),
-            (nums) => nums + [2],
+            (nums) => nums.concat([2]),
             conveyor.sleep(nat(100))
         ]);
-        expectAsync(io).toBeResolvedTo([1, 2]);
+        return expectAsync(io).toBeResolvedTo([1, 2]);
     });
 });
 
-describe('conveyor#isComplete', () => {
-    it('should return true if it has been given no actions', () => {
+describe('conveyor#isComplete', function() {
+    it('should return true if it has been given no actions', function() {
         expect(conveyor().isComplete()).toBe(true);
     });
 
-    it('should return false if there are still actions in the queue', () => {
+    it('should return false if there are still actions in the queue', function() {
         var io = conveyor();
-        var acts = repeat(conveyor.sleep(nat(10000)), 20);
+        var acts = repeat(conveyor.sleep(nat(10)), 20);
         io.doAll(acts);
         expect(io.isComplete()).toBe(false);
     });
 
-    it('should return true after all actions have been performed', () => {
-        
+    it('should return true after all actions have been performed', function() {
+        var io = conveyor();
+        var acts = repeat(conveyor.sleep(nat(10)), 20);
+        io.doAll(acts);
+        return io.then(() => {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    expect(io.isComplete()).toBe(true);
+                    resolve();
+                }, 1000);
+            });
+        });
     });
 });
 
-describe('conveyor.return', () => {
-    it('should return a promise whose value is the passed value', () => {
+describe('conveyor.return', function() {
+    it('should return a promise whose value is the passed value', function() {
         var n = nat();
-        expectAsync(conveyor.return(n)).toBeResolvedTo(n);
+        return expectAsync(conveyor.return(n)).toBeResolvedTo(n);
+    });
 
+    it('should work from within conveyor actions', function() {
+        var n = nat();
         var returnN = function() {
             return conveyor.return(n);
         };
 
-        expectAsync(conveyor().do(returnN)).toBeResolvedTo(n);
+        return expectAsync(Promise.resolve(conveyor().do(returnN))).toBeResolvedTo(n);
     });
 });
 
-describe('conveyor.sleep', () => {
-    it('should return an action that returns a promise that will sleep for ms milliseconds', () => {
+describe('conveyor.sleep', function() {
+    it('should return an action that returns a promise that will sleep for ms milliseconds', function() {
         var t0 = new Date().valueOf();
         var n = nat();
-        var io = conveyor().do(conveyor.sleep(n), () => new Date().valueOf() - t0);
-        expectAsync(io).toBeResolvedTo(n);
+        var io = conveyor({action_interval: 1, buffer_interval: 1}).do(conveyor.sleep(n), function() { return new Date().valueOf() - t0; });
+        return io.then((dt) => {
+            expect(dt).toBeGreaterThanOrEqual(n);
+        });
     });
 });
 
-describe('conveyor.asAction', () => {
-    it('should return an action bound to the given arguments', () => {
+describe('conveyor.asAction', function() {
+    it('should return an action bound to the given arguments', function() {
         var returnN = (n) => conveyor.return(n);
         var return10 = conveyor.asAction(returnN, 10);
-        conveyor().do(
-            return10,
-            (n) => expect(n).toBe(10)
-        );
+        return expectAsync(conveyor().do(return10)).toBeResolvedTo(10);
     });
 });
 
-describe('conveyor.doSequentially', () => {
-    it('should return an action that ensures that the given actions are performed sequentially', () => {
+describe('conveyor.sequence', function() {
+    it('should return an action that ensures that the given actions are performed sequentially', function() {
         var buffer = [];
-        conveyor().do(
-            conveyor.doSequentially(
+        return conveyor().do(
+            conveyor.sequence(
                 conveyor.sleep(nat()),
-                () => buffer.push(1),
+                function() { buffer.push(1); },
                 conveyor.sleep(nat()),
-                () => buffer.push(2),
+                function() { buffer.push(2); },
                 conveyor.sleep(nat()),
-                () => buffer.push(3)
+                function() { buffer.push(3); }
             ),
             conveyor.sleep(nat()),
-            () => buffer.push(4),
-            conveyor.tap(() => console.error('Buffer', buffer)),
-            () => {
-                console.log('Buffer', buffer);
+            function() { buffer.push(4); }
+        ).then(
+            function() {
                 expect(buffer[0]).toBe(1);
                 expect(buffer[1]).toBe(2);
                 expect(buffer[2]).toBe(3);
                 expect(buffer[3]).toBe(4);
-            }
-        );
-    });
-});
-
-describe('conveyor.doSimultaneously', () => {
-    it('should return an action that will fire off the given action all at once', () => {
-        var buffer = [];
-        conveyor().do(
-            conveyor.doSimultaneously(
-                conveyor.doSequentially(conveyor.sleep(nat()), () => buffer.push(1)),
-                conveyor.doSequentially(conveyor.sleep(nat()), () => buffer.push(2)),
-                conveyor.doSequentially(conveyor.sleep(nat()), () => buffer.push(3))
-            ),
-            () => buffer.push(4),
-            conveyor.sleep(nat()),
-            () => {
-                expect(buffer).toEqual(jasmine.arrayContaining([4]));
             }
         );
     });
