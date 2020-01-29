@@ -96,7 +96,7 @@
         //
         // Adds all the actions given as arguments to the conveyor
         this.do = function() {
-            this.doAll(arguments);
+            return this.doAll(arguments);
         };
 
         // conveyor#doAll
@@ -124,6 +124,31 @@
         // Returns true if there are no more actions to process and the buffer is flushed
         this.isComplete = function() {
             return ACTIONS.length === 0 && BUFFER.length === 0;
+        };
+
+        // conveyor#then
+        // -------------
+        //
+        // Implements the 'thenable' interface so a conveyor can be treated as a promise.
+        this.then = function(resolve, reject) {
+            if (PROMISE == null) {
+                return new Promise(function(resolve1) {
+                    var interval = setInterval(function() {
+                        if (SELF.isComplete()) {
+                            try {
+                                resolve();
+                            }
+                            catch (e) {
+                                reject(e);
+                            }
+                            clearInterval(interval);
+                        }
+                    }, 10);
+                });
+            }
+            else {
+                return PROMISE.then(resolve, reject);
+            }
         };
 
         function performAction(action) {
@@ -243,8 +268,12 @@
     // Returns an action that returns a promise that sleeps for ms milliseconds.
     conveyor.sleep = function(ms) {
         return function() {
+            var args = arguments;
             return new Promise(function(resolve) {
-                setTimeout(resolve, ms);
+                var self = this;
+                setTimeout(function() {
+                    resolve.apply(self, args);
+                }, ms);
             });
         };
     };
@@ -315,7 +344,7 @@
 
     this.conveyor = conveyor;
 
-    if (!isUndefined(module.exports)) {
+    if (typeof module !== 'undefined') {
         module.exports = conveyor;
     }
 

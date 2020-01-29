@@ -1,5 +1,7 @@
 // jshint esversion: 6
-const conveyor = require('../conveyor.js');
+if (typeof module !== 'undefined') {
+    var conveyor = require('../conveyor.js');
+}
 
 function nat(max) {
     return Math.floor(Math.random() * Math.floor(max || 10000));
@@ -31,33 +33,26 @@ function repeat(value, max) {
 
 describe('conveyor#do', () => {
     it('should execute all the actions given sequentially', () => {
-        var buffer = [];
-        conveyor().do(
-            () => buffer.push(1),
+        var io = conveyor().do(
+            () => [1],
             conveyor.sleep(nat(100)),
-            () => buffer.push(2),
-            conveyor.sleep(nat(100)),
-            () => {
-                expect(buffer[0]).toBe(1);
-                expect(buffer[1]).toBe(2);
-            }
+            (nums) => nums + [2],
+            conveyor.sleep(nat(100))
         );
+        expectAsync(io).toBeResolvedTo([1, 2]);
     });
 });
 
 describe('conveyor#doAll', () => {
     it('should execute all the actions given sequentially', () => {
-        var buffer = [];
-        conveyor().doAll([
-            () => buffer.push(1),
+        var io = conveyor();
+        io.doAll([
+            () => [1],
             conveyor.sleep(nat(100)),
-            () => buffer.push(2),
-            conveyor.sleep(nat(100)),
-            () => {
-                expect(buffer[0]).toBe(1);
-                expect(buffer[1]).toBe(2);
-            }
+            (nums) => nums + [2],
+            conveyor.sleep(nat(100))
         ]);
+        expectAsync(io).toBeResolvedTo([1, 2]);
     });
 });
 
@@ -81,18 +76,13 @@ describe('conveyor#isComplete', () => {
 describe('conveyor.return', () => {
     it('should return a promise whose value is the passed value', () => {
         var n = nat();
-        conveyor.return(n).then((x) => {
-            expect(x).toBe(n);
-        });
+        expectAsync(conveyor.return(n)).toBeResolvedTo(n);
 
         var returnN = function() {
             return conveyor.return(n);
         };
 
-        conveyor().do(
-            returnN,
-            (x) => expect(x).toBe(n)
-        );
+        expectAsync(conveyor().do(returnN)).toBeResolvedTo(n);
     });
 });
 
@@ -100,10 +90,8 @@ describe('conveyor.sleep', () => {
     it('should return an action that returns a promise that will sleep for ms milliseconds', () => {
         var t0 = new Date().valueOf();
         var n = nat();
-        conveyor().do(
-            conveyor.sleep(n),
-            () => expect(new Date().valueOf() - t0).toBe(n)
-        );
+        var io = conveyor().do(conveyor.sleep(n), () => new Date().valueOf() - t0);
+        expectAsync(io).toBeResolvedTo(n);
     });
 });
 

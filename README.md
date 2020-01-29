@@ -1,5 +1,5 @@
 ![Node.js CI](https://github.com/delonnewman/conveyor/workflows/Node.js%20CI/badge.svg)
-![npm](https://img.shields.io/npm/v/conveyorjs)
+![npm](https://img.shields.io/npm/v/@delonnewman/conveyor)
 [![dependencies Status](https://david-dm.org/delonnewman/conveyor/status.svg)](https://david-dm.org/delonnewman/conveyor)
 [![devDependencies Status](https://david-dm.org/delonnewman/conveyor/dev-status.svg)](https://david-dm.org/delonnewman/conveyor?type=dev)
 
