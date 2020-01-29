@@ -237,6 +237,25 @@
     // side effects.
     conveyor.doNothing = function(){};
 
+    // conveyor.sleep
+    // --------------
+    //
+    // Returns an action that returns a promise that sleeps for ms milliseconds.
+    conveyor.sleep = function(ms) {
+        return function() {
+            return new Promise(function(resolve) {
+                setTimeout(resolve, ms);
+            });
+        };
+    };
+
+    // conveyor.return
+    // ---------------
+    //
+    // Is a synonym for `Promise.resolve`. It's a way of explicitly returning a value to
+    // the next action.
+    conveyor.return = Promise.resolve.bind(Promise);
+
     // conveyor.doSimultaneously
     // -------------------------
     //
@@ -247,7 +266,7 @@
             var i, action;
             for (i = 0; i < actions.length; i++) {
                 action = actions[i];
-                if (!_.isFunction(action)) throw new Error('Actions should be functions');
+                if (!isFunction(action)) throw new Error('Actions should be functions');
                 action.apply(this, arguments);
             }
         };
@@ -276,14 +295,14 @@
             var promise, i, action, ret, args, self = this;
             for (i = 0; i < actions.length; i++) {
                 action = actions[i];
-                if (!_.isFunction(action)) throw new Error('Actions should be functions');
+                if (!isFunction(action)) throw new Error('Actions should be functions');
                 if (ret == null) {
                     ret = action.apply(self, arguments);
                 }
-                else if (_.isFunction(ret.then) && promise == null) {
+                else if (isFunction(ret.then) && promise == null) {
                     promise = resolveThenable(ret, action, self);
                 }
-                else if (_.isFunction(ret.then)) {
+                else if (isFunction(ret.then)) {
                     promise = collectPromiseAction(promise, ret, action, self);
                 }
                 else {
