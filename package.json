@@ -1,6 +1,6 @@
 {
   "name": "conveyorjs",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Buffers and coordinates IO",
   "main": "conveyor.js",
   "scripts": {
