@@ -91,16 +91,16 @@
         // Instance Methods
         // ----------------
 
-        // conveyor#do
-        // -----------
+        // conveyor#do(...actions) => Conveyor
+        // -----------------------------------
         //
         // Adds all the actions given as arguments to the conveyor
         this.do = function() {
             return this.doAll(arguments);
         };
 
-        // conveyor#doAll
-        // --------------
+        // conveyor#doAll(actions) => Conveyor
+        // -----------------------------------
         //
         // Adds an array of actions to the conveyor
         this.doAll = function(fns) {
@@ -120,16 +120,16 @@
             return this;
         };
 
-        // conveyor#isComplete
-        // -------------------
+        // conveyor#isComplete() => Boolean
+        // --------------------------------
         //
         // Returns true if there are no more actions to process and the buffer is flushed
         this.isComplete = function() {
             return ACTIONS.length === 0 && BUFFER.length === 0;
         };
 
-        // conveyor#then
-        // -------------
+        // conveyor#then(resolve, reject) => Promise
+        // -----------------------------------------
         //
         // Implements the 'thenable' interface so a conveyor can be treated as a promise.
         this.then = function(resolve, reject) {
@@ -184,24 +184,30 @@
 
     Conveyor.prototype = Object.create(null);
 
-    // conveyor#log
-    // ------------
+    // conveyor#log(...arguments) => Conveyor
+    // --------------------------------------
     //
     // Queues an action prints it's first argument to the console.
     Conveyor.prototype.log = function() {
         return this.do(conveyor.say.apply(conveyor, arguments));
     };
 
-    // isConveyor
+    // Predicates
     // ----------
+
+    // isConveyor(x) => Boolean
+    // ------------------------
     //
     // Returns true is the value given is a Conveyor instance, otherwise returns false.
     function isConveyor(x) {
         return x instanceof Conveyor;
     }
 
-    // conveyor
-    // --------
+    // Constructors
+    // ------------
+
+    // conveyor([opts])
+    // ----------------
     //
     // Returns a new Conveyor instance
     function conveyor(opts) {
@@ -211,8 +217,8 @@
     // Action Builders & Combinators
     // -----------------------------
 
-    // conveyor.asAction
-    // -----------------
+    // conveyor.asAction(fn, ...arguments)()
+    // -------------------------------------
     //
     // Builds an action from a function and it's arguments
     //
@@ -229,14 +235,14 @@
     };
 
     // conveyor.none
-    // ------------------
+    // -------------
     //
     // Is a no-op action. It takes no arguments, returns no value, and has no
     // side effects.
     conveyor.none = function(){};
 
-    // conveyor.tap
-    // ------------
+    // conveyor.tap(fn)(x) => Promise(x)
+    // ---------------------------------------
     //
     // Returns an action that calls the given function (for-side effects), but returns
     // the argument that's been past to it.
@@ -256,8 +262,8 @@
         };
     };
 
-    // conveyor.always
-    // ---------------
+    // conveyor.always(x)() => Promise(x)
+    // ----------------------------------
     //
     // Returns an action that always returns the given value.
     //
@@ -273,8 +279,8 @@
         };
     };
 
-    // conveyor.ident
-    // --------------
+    // conveyor.ident()(x) => Promise(x)
+    // ---------------------------------
     //
     // Returns an action that returns the first argument that is given to it.
     //
@@ -289,8 +295,8 @@
         };
     };
 
-    // conveyor.log
-    // ------------
+    // conveyor.log(...arguements)(x) => Promise(x)
+    // --------------------------------------------
     //
     // Returns an action that will log it's input and return it for the next action.
     //
@@ -306,8 +312,8 @@
         };
     };
 
-    // conveyor.say
-    // ------------
+    // conveyor.say(...arguments)(x) => Promise(x)
+    // -------------------------------------------
     //
     // Returns an action that will print the given message to the console. It' will also pass along
     // it's first argument for the next action.
@@ -325,8 +331,8 @@
         };
     };
 
-    // conveyor.sleep
-    // --------------
+    // conveyor.sleep(ms)() => Promise
+    // -------------------------------
     //
     // Returns an action that returns a promise that sleeps for ms milliseconds.
     conveyor.sleep = function(ms) {
@@ -341,8 +347,8 @@
         };
     };
 
-    // conveyor.throw
-    // --------------
+    // conveyor.throw(error)()
+    // -----------------------
     //
     // Returns an action that throws an exception.
     conveyor.throw = function(e) {
@@ -351,8 +357,8 @@
         };
     };
 
-    // conveyor.return
-    // ---------------
+    // conveyor.return(x) => Promise(x)
+    // --------------------------------
     //
     // Is a synonym for `Promise.resolve`. It's a way of explicitly returning a value to
     // the next action.
@@ -391,8 +397,8 @@
         return promise || Promise.resolve(ret);
     };
 
-    // conveyor.sequence
-    // -----------------------
+    // conveyor.sequence(...actions)() => Promise
+    // ------------------------------------------
     //
     // Returns an action that executes the given actions sequentially an returns a promise
     // that will ensure that any actions added to a conveyor after it will be executed sequentially.
@@ -403,8 +409,8 @@
         };
     };
 
-    // `conveyor.when(predicate, ...actions)`
-    // --------------------------------------
+    // conveyor.when(predicate, ...actions)(x) => Promise(x)
+    // -----------------------------------------------------
     //
     // Returns an action that executes `actions` only if `predicate` is not `null`, `undefined` or
     // `false`.
@@ -419,8 +425,8 @@
         };
     };
 
-    // `conveyor.unless(predicate, ...actions)`
-    // --------------------------------------
+    // conveyor.unless(predicate, ...actions)(x) => Promise(x)
+    // -------------------------------------------------------
     //
     // Returns an action that executes `actions` only if `predicate` is `null`, `undefined` or
     // `false`.
