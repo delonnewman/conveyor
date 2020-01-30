@@ -3,22 +3,12 @@
 [![dependencies Status](https://david-dm.org/delonnewman/conveyor/status.svg)](https://david-dm.org/delonnewman/conveyor)
 [![devDependencies Status](https://david-dm.org/delonnewman/conveyor/dev-status.svg)](https://david-dm.org/delonnewman/conveyor?type=dev)
 
-NAME
-====
+Conveyor.js
+===========
 
-Conveyor.js - Buffers and coordinates IO.
+Buffered and coordinated IO.
 
-INSTALL
-=======
-
-    > npm install @delonnewman/conveyor
-
-DOCUMENTATION
-=============
-
-[Conveyor.js](https://delonnewman.github.io/conveyor)
-
-SYNOPSIS
+Synopsis
 ========
 
 ```javascript
@@ -50,7 +40,18 @@ function doAddTodoItem(item) {
 
 ```
 
-AUTHOR
-======
+Install
+=======
 
-Delon Newman <contact@delonnewman.name>
+    > npm install @delonnewman/conveyor
+
+Annotated Source
+================
+
+[Conveyor.js](https://delonnewman.github.io/conveyor)
+
+See Also
+========
+
+- [Clojure core.async](https://github.com/clojure/core.async)
+- [Forth](https://en.wikipedia.org/wiki/Forth_(programming_language))
