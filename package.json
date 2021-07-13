@@ -1,6 +1,6 @@
 {
   "name": "@delonnewman/conveyor",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Buffers and coordinates IO",
   "main": "conveyor.js",
   "scripts": {
@@ -29,6 +29,7 @@
   },
   "homepage": "https://delonnewman.github.io/conveyor",
   "devDependencies": {
+    "docco": "^0.8.1",
     "jasmine": "^3.5.0",
     "uglify-js": "^3.7.6"
   }

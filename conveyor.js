@@ -179,7 +179,7 @@
         }, ACTION_TTL);
     }
 
-    // Extentions
+    // Extensions
     // ----------
 
     Conveyor.prototype = Object.create(null);
@@ -443,7 +443,7 @@
 
     this.conveyor = conveyor;
 
-    // The contructor is available for extention
+    // The contructor is available for extension
     conveyor.Conveyor = Conveyor;
 
     if (typeof module !== 'undefined') {

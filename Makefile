@@ -28,7 +28,7 @@ docs/index.html: docs/conveyor.html
 	mv docs/conveyor.html docs/index.html
 
 docs/conveyor.html: /usr/local/bin/docco
-	docco conveyor.js
+	npx docco conveyor.js
 
 clean:
 	rm -rf docs
